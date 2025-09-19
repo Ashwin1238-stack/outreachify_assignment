@@ -1,0 +1,87 @@
+{
+    "name": "Daily Company Report Automation",
+    "modules": [
+        {
+            "id": 1,
+            "name": "Scheduler",
+            "type": "tools.scheduler",
+            "schedule": {
+                "type": "daily",
+                "time": "07:00"
+            }
+        },
+        {
+            "id": 2,
+            "name": "Random User API",
+            "type": "http.get",
+            "url": "https://randomuser.me/api/"
+        },
+        {
+            "id": 3,
+            "name": "Airtable - Create Record",
+            "type": "airtable.createRecord",
+            "connection": {
+                "apiKey": "YOUR_AIRTABLE_API_KEY"
+            },
+            "baseId": "YOUR_BASE_ID",
+            "tableId": "YOUR_TABLE_ID",
+            "fields": {
+                "Name": "{{2.results[0].name.first}} {{2.results[0].name.last}}",
+                "Email": "{{2.results[0].email}}",
+                "Company": "Acme Inc"
+            }
+        },
+        {
+            "id": 4,
+            "name": "OpenAI - Summarize Company",
+            "type": "openai.chat",
+            "connection": {
+                "apiKey": "YOUR_OPENAI_API_KEY"
+            },
+            "model": "gpt-3.5-turbo",
+            "prompt": "Summarize the company \"{{3.fields.Company}}\" in 5 sentences."
+        },
+        {
+            "id": 5,
+            "name": "Google Docs - Create Document",
+            "type": "googledocs.createDocument",
+            "connection": {
+                "token": "YOUR_GOOGLE_OAUTH_TOKEN"
+            },
+            "title": "Company Report - {{3.fields.Company}}",
+            "content": "Company Name: {{3.fields.Company}}\nSummary: {{4.choices[0].message.content}}"
+        },
+        {
+            "id": 6,
+            "name": "Slack - Send Message",
+            "type": "slack.sendMessage",
+            "connection": {
+                "token": "YOUR_SLACK_TOKEN"
+            },
+            "channel": "#reports",
+            "message": "Daily Report for {{3.fields.Company}}:\nSee summary here: {{5.url}}"
+        }
+    ],
+    "links": [
+        {
+            "from": 1,
+            "to": 2
+        },
+        {
+            "from": 2,
+            "to": 3
+        },
+        {
+            "from": 3,
+            "to": 4
+        },
+        {
+            "from": 4,
+            "to": 5
+        },
+        {
+            "from": 5,
+            "to": 6
+        }
+    ]
+}
